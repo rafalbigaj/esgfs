@@ -9,7 +9,15 @@ Synapse.build_with_defaults do
 	# gateway
 
 	es_repository :file_repository do
+    use_aggregate_type EsGfs::File
+	end
+
+	es_repository :directory_repository do
     use_aggregate_type EsGfs::Directory
+	end
+
+	es_repository :location_repository do
+    use_aggregate_type EsGfs::Location
 	end
 
 	factory :event_store do
