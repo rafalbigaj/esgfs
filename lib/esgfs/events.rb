@@ -1,5 +1,11 @@
 module EsGfs
-	class DirectoryCreated < Struct.new(:id, :name, :owner)
+	class LocationCreated < Struct.new(:id, :name)
+	end
+
+	class DirectoryCreated < Struct.new(:id, :name, :owner, :path)
+	end
+
+	class SubDirectoryAdded < Struct.new(:id, :name)
 	end
 
 	class FileCreated < Struct.new(:id, :directory_id, :name, :mime_type)
@@ -11,6 +17,6 @@ module EsGfs
 	class FileAlreadyExists < Struct.new(:id, :directory_id, :name)
 	end
 
-	class LocationCreated < Struct.new(:id, :name)
+	class FileLocationLinked < Struct.new(:location_id, :path)
   end
 end

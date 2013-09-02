@@ -8,9 +8,17 @@ module EsGfs
     depends_on :location_repository
     depends_on :event_store
 
+		map_command CreateLocation do |command|
+			location = Location.new(command.name)
+			location_repository.add location
+			location.id
+		end
+
     map_command CreateDirectory do |command|
-      directory = Directory.new(command.name, command.owner)
+			parent = directory_repository.load(command.directory_id) if command.directory_id
+			directory = Directory.new(command.name, command.owner, parent)
       directory_repository.add directory
+			parent.add_sub_directory directory.id, directory.name if parent
       directory.id
     end
 
@@ -21,10 +29,9 @@ module EsGfs
       file.try(:id)
     end
 
-    map_command CreateLocation do |command|
-      location = Location.new(command.name)
-      location_repository.add location
-      location.id
+    map_command LinkFileLocation do |command|
+			file = file_repository.load(command.file_id)
+			file.link_location command.location_id, command.path
     end
 
 =begin
