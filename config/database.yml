@@ -50,8 +50,9 @@ test:
 
 production:
   adapter: postgresql
+  host: localhost
   encoding: unicode
-  database: esgfs_production
+  database: esgfs
   pool: 5
-  username: esgfs
-  password:
+  username: postgres
+  password: heaven777

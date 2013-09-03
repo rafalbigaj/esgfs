@@ -9,13 +9,15 @@ class LocationTest < ActiveSupport::TestCase
 
 	def setup
 		Synapse.container.inject_into self
+  end
+
+  def teardown
     event_store.clear
-	end
+  end
 
 	def test_create
-		command = EsGfs::CreateLocation.new("main")
-		location_id = gateway.send_and_wait command
-    assert_equal "main", location_id
+		location_id = send_command(EsGfs::CreateLocation, "main")
+    assert_equal "Location-main", location_id
 
     events = event_store.read_events('Location', location_id).to_a.map(&:payload)
 
@@ -24,5 +26,12 @@ class LocationTest < ActiveSupport::TestCase
     assert_kind_of EsGfs::LocationCreated, event
     assert_equal location_id, event.id
     assert_equal "main", event.name
-	end
+  end
+
+  def test_duplicate
+    send_command(EsGfs::CreateLocation, "main")
+    assert_raise Synapse::Command::CommandExecutionError do
+      send_command(EsGfs::CreateLocation, "main")
+    end
+  end
 end

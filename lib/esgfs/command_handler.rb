@@ -9,7 +9,11 @@ module EsGfs
     depends_on :event_store
 
 		map_command CreateLocation do |command|
-			location = Location.new(command.name)
+			location_id = Location.create_id(command.name)
+      existing_location = location_repository.load(location_id) rescue nil
+      raise LocationAlreadyExistsError, "Location with name '#{existing_location.name}' already exists" if existing_location
+
+      location = Location.new(location_id, command.name)
 			location_repository.add location
 			location.id
 		end
@@ -29,16 +33,21 @@ module EsGfs
       file.try(:id)
     end
 
+    map_command DeleteFile do |command|
+      file = file_repository.load(command.id)
+      directory = directory_repository.load(file.directory_id)
+      directory.delete_file file
+    end
+
     map_command LinkFileLocation do |command|
 			file = file_repository.load(command.file_id)
 			file.link_location command.location_id, command.path
     end
 
-=begin
-		map_command CheckInStock do |command|
-			item = item_repository.load(command.id)
-			item.check_in command.quantity
-		end
-=end
+    map_command UnlinkFileLocation do |command|
+			file = file_repository.load(command.file_id)
+			file.unlink_location command.location_id
+    end
+
   end
 end

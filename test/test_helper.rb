@@ -10,4 +10,11 @@ class ActiveSupport::TestCase
   fixtures :all
 
   # Add more helper methods to be used by all tests here...
+  protected
+
+  def send_command(command_class, *args)
+    command = command_class.new(*args)
+    gateway.send_and_wait command
+  end
+
 end

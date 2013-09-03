@@ -24,6 +24,10 @@ Synapse.build_with_defaults do
 		Synapse::EventStore::InMemoryEventStore.new
 	end
 
+  in_memory_status_database do
+
+  end
+
   # Register your command handler so it can be subscribed to the command bus and get its own
   # dependencies injected upon creation
   factory :directory_command_handler, :tag => :command_handler do

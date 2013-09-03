@@ -56,5 +56,7 @@ Esgfs::Application.routes.draw do
   # Note: This route will make all actions in every controller accessible via GET requests.
   # match ':controller(/:action(/:id))(.:format)'
 
-	match 'items/create' => 'inventory_items#create'
+	match 'api/locations/create' => 'locations_api#create'
+	match 'api/locations/status' => 'locations_api#status'
+	match 'api/locations/events' => 'locations_api#events'
 end

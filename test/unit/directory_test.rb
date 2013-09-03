@@ -9,8 +9,11 @@ class DirectoryTest < ActiveSupport::TestCase
 
 	def setup
 		Synapse.container.inject_into self
-    event_store.clear
 	end
+
+  def teardown
+    event_store.clear
+  end
 
 	def test_create
 		command = EsGfs::CreateDirectory.new("root", nil)
@@ -28,14 +31,9 @@ class DirectoryTest < ActiveSupport::TestCase
 	end
 
 	def test_create_subdirectory
-		command = EsGfs::CreateDirectory.new("root", nil)
-		directory_id = gateway.send_and_wait command
-
-		command = EsGfs::CreateDirectory.new("a", nil, directory_id)
-		a_directory_id = gateway.send_and_wait command
-
-		command = EsGfs::CreateDirectory.new("b", nil, a_directory_id)
-		b_directory_id = gateway.send_and_wait command
+    directory_id = send_command(EsGfs::CreateDirectory, "root", nil)
+    a_directory_id = send_command(EsGfs::CreateDirectory, "a", nil, directory_id)
+    b_directory_id = send_command(EsGfs::CreateDirectory, "b", nil, a_directory_id)
 
 		events = event_store.read_events(:directory, b_directory_id).to_a.map(&:payload)
 		assert_kind_of EsGfs::DirectoryCreated, events[0]
@@ -55,11 +53,8 @@ class DirectoryTest < ActiveSupport::TestCase
 	end
 
 	def test_add_file
-		command = EsGfs::CreateDirectory.new("root", nil)
-		directory_id = gateway.send_and_wait command
-
-		command = EsGfs::CreateFile.new(directory_id, "test.txt", "text/plain")
-		file_id = gateway.send_and_wait command
+    directory_id = send_command(EsGfs::CreateDirectory, "root", nil)
+    file_id = send_command(EsGfs::CreateFile, directory_id, "test.txt", "text/plain")
 
     events = event_store.read_events(:file, file_id).to_a.map(&:payload)
     assert_equal 1, events.size
@@ -69,6 +64,7 @@ class DirectoryTest < ActiveSupport::TestCase
 		assert_equal file_id, file_event.id
 		assert_equal "test.txt", file_event.name
 		assert_equal "text/plain", file_event.mime_type
+		assert_equal "root/test.txt", file_event.path
 
 		assert_equal 2, event_store.read_events(:directory, directory_id).to_a.size
 
@@ -80,26 +76,46 @@ class DirectoryTest < ActiveSupport::TestCase
 		assert_equal 2, event_store.read_events(:directory, directory_id).to_a.size, "No event should be added after exception"
 	end
 
+  def setup_simple_file_structure
+    @location_id = send_command(EsGfs::CreateLocation, "main")
+    @directory_id = send_command(EsGfs::CreateDirectory, "root", nil)
+    @file_id = send_command(EsGfs::CreateFile, @directory_id, "test.txt", "text/plain")
+    send_command EsGfs::LinkFileLocation, @file_id, @location_id, "/home/repository/main/test.txt"
+  end
+
 	def test_add_file_location
-		command = EsGfs::CreateLocation.new("main")
-		location_id = gateway.send_and_wait command
+    setup_simple_file_structure
 
-		command = EsGfs::CreateDirectory.new("root", nil)
-		directory_id = gateway.send_and_wait command
-
-		command = EsGfs::CreateFile.new(directory_id, "test.txt", "text/plain")
-		file_id = gateway.send_and_wait command
-
-		command = EsGfs::LinkFileLocation.new(file_id, location_id, "/home/repository/main/test.txt")
-		gateway.send_and_wait command
-
-		events = event_store.read_events(:file, file_id).to_a.map(&:payload)
+		events = event_store.read_events(:file, @file_id).to_a.map(&:payload)
 		assert_equal 2, events.size
 		assert_kind_of EsGfs::FileCreated, events[0]
 		assert_kind_of EsGfs::FileLocationLinked, events[1]
 
 		event = events[1]
-		assert_equal location_id, event.location_id
+		assert_equal @location_id, event.location_id
 		assert_equal "/home/repository/main/test.txt", event.path
 	end
+
+  def test_remove_file_location
+    setup_simple_file_structure
+    send_command EsGfs::UnlinkFileLocation, @file_id, @location_id
+
+    events = event_store.read_events(:file, @file_id).to_a.map(&:payload)
+    assert_equal 3, events.size
+    assert_kind_of EsGfs::FileCreated, events[0]
+    assert_kind_of EsGfs::FileLocationLinked, events[1]
+    assert_kind_of EsGfs::FileLocationUnlinked, events[2]
+
+    event = events[2]
+    assert_equal @location_id, event.location_id
+  end
+
+  def test_delete_file
+    setup_simple_file_structure
+    send_command EsGfs::DeleteFile, @file_id
+
+    events = event_store.read_events(:file, @file_id).to_a.map(&:payload)
+    events.each {|e| p e }
+  end
+
 end

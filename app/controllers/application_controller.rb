@@ -1,6 +1,7 @@
 class ApplicationController < ActionController::Base
+  include Synapse::Configuration::Dependent
+
   protect_from_forgery
-	include Synapse::Configuration::Dependent
 
 	before_filter do |controller|
 		Synapse.container.inject_into controller

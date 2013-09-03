@@ -11,6 +11,12 @@ module EsGfs
 	class CreateFile < Struct.new(:directory_id, :name, :mime_type)
 	end
 
+	class DeleteFile < Struct.new(:id)
+	end
+
 	class LinkFileLocation < Struct.new(:file_id, :location_id, :path)
+	end
+
+  class UnlinkFileLocation < Struct.new(:file_id, :location_id)
 	end
 end
