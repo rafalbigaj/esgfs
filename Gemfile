@@ -37,9 +37,13 @@ gem 'jquery-rails'
 # To use debugger
 # gem 'debugger'
 
-gem 'synapse-core', '0.6.0', require: 'synapse-core'
+gem 'synapse-core' #, '0.6.0', require: 'synapse-core'
+gem 'synapse-mongo' #, :github => 'ianunruh/synapse-mongo', :branch => :master
+gem 'bson_ext'
 
 group :development do
-	gem "better_errors"
-	gem "binding_of_caller"
+	gem 'better_errors'
+	gem 'binding_of_caller'
+	gem 'ruby-prof'
+	gem 'json_expressions'
 end

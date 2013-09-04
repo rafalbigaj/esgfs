@@ -20,3 +20,10 @@ class Synapse::Command::CommandExecutionError
     "#{cause.class.name}: #{cause.message}"
   end
 end
+
+Synapse::EventStore::Mongo::MongoEventStore.class_eval do
+	def clear
+		@template.event_collection.drop
+		@template.snapshot_collection.drop
+	end
+end

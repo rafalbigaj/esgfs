@@ -1,21 +1,12 @@
 require_relative '../test_helper'
 
 class StatusDatabaseTest < ActiveSupport::TestCase
-	include Synapse::Configuration::Dependent
-
-	depends_on :gateway
-	depends_on :event_bus
-	depends_on :event_store
+	include EsGfs::Testing
 
 	def setup
-		Synapse.container.inject_into self
 		@db = EsGfs::InMemoryStatusDatabase.new
 		self.event_bus.subscribe @db
 	end
-
-  def teardown
-    event_store.clear
-  end
 
 	def test_location_creation
     location_id = send_command(EsGfs::CreateLocation, "main")

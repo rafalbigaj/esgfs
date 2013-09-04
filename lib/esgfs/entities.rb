@@ -28,20 +28,19 @@ module EsGfs
   class Directory
     include Synapse::EventSourcing::AggregateRoot
 
-    attr_reader :name, :owner, :path, :files, :directories
+    attr_reader :name, :owner, :parent_id, :files, :directories
 
     child_entity :files
 
     def initialize(name, owner, parent=nil)
       pre_initialize
-			path = parent ? ::File.join(parent.path, name) : name
-      apply DirectoryCreated.new name, name, owner, path
+			directory_id = SecureRandom.uuid
+      apply DirectoryCreated.new(directory_id, name, owner, parent.try(:id))
     end
 
     def add_file(name, mime_type)
        file_id = SecureRandom.uuid
-       path = ::File.join(self.path, name)
-       file = File.new(file_id, self.id, name, mime_type, path)
+       file = File.new(file_id, self.id, name, mime_type)
        apply FileAdded.new(file_id, name)
        file
     end
@@ -66,7 +65,7 @@ module EsGfs
       @id = event.id
       @name = event.name
       @owner = event.owner
-      @path = event.path
+      @parent_id = event.parent_id
     end
 
     map_event FileAdded do |event|
@@ -87,13 +86,13 @@ module EsGfs
   class File
     include Synapse::EventSourcing::AggregateRoot
 
-    attr_reader :id, :directory_id, :name, :mime_type, :path
+    attr_reader :id, :directory_id, :name, :mime_type
 
 		child_entity :file_locations
 
-    def initialize(id, directory_id, name, mime_type, path)
+    def initialize(id, directory_id, name, mime_type)
 			pre_initialize
-      apply FileCreated.new(id, directory_id, name, mime_type, path)
+      apply FileCreated.new(id, directory_id, name, mime_type)
     end
 
     def delete
@@ -119,7 +118,6 @@ module EsGfs
       @directory_id = event.directory_id
       @name = event.name
       @mime_type = event.mime_type
-      @path = event.path
     end
 
     map_event FileDeleted do |_|

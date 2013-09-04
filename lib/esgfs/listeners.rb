@@ -8,16 +8,35 @@ module EsGfs
     class Location < Struct.new(:id, :name)
     end
 
-    class Directory < Struct.new(:id, :name, :path)
+    class Directory
+			attr_reader :id, :name, :owner, :parent_id, :path
+
+			def initialize(id, name, owner, parent)
+				@id = id
+				@name = name
+				@owner = owner
+				@parent_id = parent.try(:id)
+				@path = parent ? ::File.join(parent.path, name) : name
+			end
+
+			def directory?; true end
+			def file?; false end
     end
 
-    class File < Struct.new(:id, :name, :mime_type, :path)
-      attr_reader :locations
+    class File
+      attr_reader :id, :directory_id, :name, :mime_type, :path, :locations
 
-      def initialize(id, name, mime_type, path)
-        super
-        @locations = {}
+      def initialize(id, name, mime_type, directory)
+        @id = id
+				@name = name
+				@mime_type = mime_type
+        @directory_id = directory.id
+				@path = ::File.join(directory.path, name)
+				@locations = {}
       end
+
+			def directory?; false end
+			def file?; true end
     end
 
     attr_reader :locations, :directories, :files
@@ -35,13 +54,17 @@ module EsGfs
     end
 
     map_event DirectoryCreated do |event|
-      directory = Directory.new(event.id, event.name, event.path)
+			parent = @directories[event.parent_id] if event.parent_id
+			raise "Parent directory '#{event.parent_id}' not found" if event.parent_id && !parent
+      directory = Directory.new(event.id, event.name, event.owner, parent)
       @directories[directory.id] = directory
       @file_map[directory.path] = directory
     end
 
     map_event FileCreated do |event|
-      file = File.new(event.id, event.name, event.mime_type, event.path)
+			directory = @directories[event.directory_id]
+			raise "Directory '#{event.directory_id}' not found" unless directory
+      file = File.new(event.id, event.name, event.mime_type, directory)
       @files[file.id] = file
       @file_map[file.path] = file
     end

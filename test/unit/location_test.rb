@@ -1,19 +1,7 @@
 require_relative '../test_helper'
 
 class LocationTest < ActiveSupport::TestCase
-	include Synapse::Configuration::Dependent
-
-	depends_on :gateway
-	depends_on :event_store
-	depends_on :location_repository
-
-	def setup
-		Synapse.container.inject_into self
-  end
-
-  def teardown
-    event_store.clear
-  end
+	include EsGfs::Testing
 
 	def test_create
 		location_id = send_command(EsGfs::CreateLocation, "main")
