@@ -8,7 +8,7 @@ class DirectoriesControllerTest < ActionController::TestCase
 	test "create" do
 		post :create, :path => "root"
 		assert_response :success
-		assert_equal 'application/json', response.content_type
+    assert_equal 'application/json', response.content_type
 		pattern = {
 						id: :id,
 						name: 'root',

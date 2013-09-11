@@ -44,7 +44,9 @@ module EsGfs::Testing
 		if self < ActionController::TestCase
 			class_eval do
 				def process(*args)
-					@controller.env['async.callback'] = Proc.new {|response| @last_response = ActionController::TestResponse.new(*response) }
+					@controller.env['async.callback'] = Proc.new do |response|
+            @response = ActionController::TestResponse.new(*response)
+          end
 					catch(:async) { super }
 				end
 			end
@@ -57,7 +59,9 @@ Rack::MockSession.class_eval do
 	private
 
 	def request_with_async_callback(uri, env)
-		env['async.callback'] = Proc.new {|response| @last_response = Rack::MockResponse.new(*response) }
+		env['async.callback'] = Proc.new do |response|
+      @last_response = Rack::MockResponse.new(*response)
+    end
 		catch(:async) { request_without_async_callback(uri, env) }
 	end
 

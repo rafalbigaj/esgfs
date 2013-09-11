@@ -1,6 +1,9 @@
 module Api
 	class LocationsController < BaseController
-		def create
+		def new
+    end
+
+    def create
 			send_command(EsGfs::CreateLocation, params[:name]) do |id|
 				status_database.locations[id]
 			end

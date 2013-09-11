@@ -10,8 +10,11 @@ class GfsTest < ActionDispatch::IntegrationTest
 		@location_id = ActiveSupport::JSON.decode(response.body)['id']
 		assert_not_nil @location_id
 		@entries = 0
+    start = Time.now
 		create_directory_structure Rails.root.to_s, File.dirname(Rails.root)
-		puts "Created #{@entries} directories and files"
+    duration = Time.now - start
+		puts "Created %d directories and files in %.2fs, %.2fms per command, %.2f commands/sec." %
+             [@entries, duration, duration*1000/@entries, @entries/duration]
 	end
 
 	protected
